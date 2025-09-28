@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XXE Injection Challenge</title>
+    <style>
+        body { font-family: sans-serif; margin: 2em; background-color: #f4f4f9; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 2em; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-bottom: 2em;}
+        h1, h2 { color: #333; }
+        textarea, select, button, input { width: 100%; padding: 10px; margin-bottom: 1em; border-radius: 4px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { background-color: #007bff; color: white; border: none; cursor: pointer; font-size: 16px; }
+        button:hover { background-color: #0056b3; }
+        #result, #result7 { background-color: #e9ecef; padding: 1em; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; min-height: 50px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>XXE Injection Challenge Lab</h1>
+    <h2>Select Level</h2>
+    <select id="levelSelector">
+        <option value="1">Level 1 - Classic XXE</option>
+        <option value="2">Level 2 - Simple Filter</option>
+        <option value="3">Level 3 - Bad Filter</option>
+        <option value="4">Level 4 - Secure</option>
+        <option value="5">Level 5 - Blind XXE (OOB)</option>
+        <option value="6">Level 6 - Blind XXE (Error-based)</option>
+        <option value="8">Level 8 - XInclude Attack</option>
+    </select>
+    <h2>Enter XML Payload</h2>
+    <textarea id="xmlPayload" rows="10"></textarea>
+    <button id="submitBtn">Submit Payload</button>
+    <h2>Result</h2>
+    <pre id="result">The result from the server will appear here.</pre>
+</div>
+
+<div class="container">
+    <h2>Level 7 - XXE via SVG File Upload</h2>
+    <form id="uploadForm" enctype="multipart/form-data">
+        <input type="file" id="svgFile" name="file" accept="image/svg+xml">
+        <button type="submit">Upload SVG</button>
+    </form>
+    <h2>Result</h2>
+    <pre id="result7">SVG upload result will appear here.</pre>
+</div>
+
+<script>
+    // Script for payload submission
+    document.getElementById('submitBtn').addEventListener('click', async () => {
+        const level = document.getElementById('levelSelector').value;
+        const payload = document.getElementById('xmlPayload').value;
+        const resultDiv = document.getElementById('result');
+        const url = `/api/level${level}`;
+
+        resultDiv.textContent = 'Sending request...';
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/xml' },
+                body: payload
+            });
+            resultDiv.textContent = await response.text();
+        } catch (error) {
+            resultDiv.textContent = 'An error occurred: ' + error.message;
+        }
+    });
+
+    // Script for file upload (Level 7)
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const resultDiv = document.getElementById('result7');
+        const fileInput = document.getElementById('svgFile');
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+
+        resultDiv.textContent = 'Uploading file...';
+        try {
+            const response = await fetch('/api/level7/upload-svg', {
+                method: 'POST',
+                body: formData
+            });
+            resultDiv.textContent = await response.text();
+        } catch (error) {
+            resultDiv.textContent = 'An error occurred: ' + error.message;
+        }
+    });
+</script>
+</body>
+</html>

@@ -1,25 +1,29 @@
 package com.example.xxe_injection;
 
+// CÁC IMPORT CẦN THIẾT
 import org.springframework.stereotype.Service;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
-
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.StringReader;
+import javax.xml.XMLConstants; // Import quan trọng bị thiếu
 
 @Service
 public class XmlParserService {
 
-    // Helper method to create a vulnerable parser
     private DocumentBuilder createVulnerableBuilder() throws ParserConfigurationException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        // Allow everything for maximum vulnerability
+
+        // BẬT CÁC TÍNH NĂNG NGUY HIỂM ĐỂ CHO PHÉP OOB
+        dbf.setFeature("http://xml.org/sax/features/external-parameter-entities", true);
+        dbf.setFeature("http://xml.org/sax/features/external-general-entities", true);
+        dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, false);
+
         return dbf.newDocumentBuilder();
     }
 
-    // Helper method to create a Ssecure parser
     private DocumentBuilder createSecureBuilder() throws ParserConfigurationException {
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
@@ -30,7 +34,6 @@ public class XmlParserService {
         return dbf.newDocumentBuilder();
     }
 
-    // --- LEVEL 1-4 (Giữ nguyên logic cũ nhưng dùng helper) ---
     public String parseLevel1(String xml) {
         try {
             Document doc = createVulnerableBuilder().parse(new InputSource(new StringReader(xml)));
@@ -56,59 +59,58 @@ public class XmlParserService {
         } catch (Exception e) { return "Error: " + e.getMessage(); }
     }
 
-    // --- LEVEL 5: Blind XXE (Out-of-Band) ---
     public String parseLevel5(String xml) {
         try {
-            // Vulnerable parser, but the response doesn't show the content
             createVulnerableBuilder().parse(new InputSource(new StringReader(xml)));
-            return "Data processed successfully."; // No content is returned
+            return "Data processed successfully.";
         } catch (Exception e) {
             return "Error: " + e.getMessage();
         }
     }
 
-    // --- LEVEL 6: Error-based Blind XXE ---
     public String parseLevel6(String xml) {
-        // This level has a specific configuration that reveals errors
         try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            // It allows external DTDs but might have issues resolving them, leading to errors
             dbf.setFeature("http://xml.org/sax/features/external-general-entities", true);
             DocumentBuilder dBuilder = dbf.newDocumentBuilder();
             dBuilder.parse(new InputSource(new StringReader(xml)));
             return "Data processed.";
         } catch (Exception e) {
-            // The error message itself is the vulnerability
             return "An exception occurred: " + e.toString();
         }
     }
 
-    // --- LEVEL 7: XXE via File Upload (SVG) ---
-    // Controller sẽ xử lý file upload, service chỉ cần phân tích
     public String parseSvg(String svgContent) {
         try {
             Document doc = createVulnerableBuilder().parse(new InputSource(new StringReader(svgContent)));
-            // Simulate rendering the SVG, which might trigger the XXE
             return "SVG file processed. It contains " + doc.getElementsByTagName("*").getLength() + " elements.";
         } catch (Exception e) {
             return "Error processing SVG: " + e.getMessage();
         }
     }
 
-    // --- LEVEL 8: XInclude Attack ---
     public String parseLevel8(String xml) {
         try {
             DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-            // DTDs are disabled, but XInclude is enabled!
             dbf.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            dbf.setXIncludeAware(true); // The vulnerability!
-            dbf.setNamespaceAware(true); // Required for XInclude
+            dbf.setXIncludeAware(true);
+            dbf.setNamespaceAware(true);
 
             DocumentBuilder dBuilder = dbf.newDocumentBuilder();
             Document doc = dBuilder.parse(new InputSource(new StringReader(xml)));
             return "XInclude Parsed: " + doc.getDocumentElement().getTextContent();
         } catch (Exception e) {
             return "Error: " + e.getMessage();
+        }
+    }
+
+    // --- LEVEL 9: Truly Blind XXE (No Error Feedback) ---
+    public String parseLevel9(String xml) {
+        try {
+            createVulnerableBuilder().parse(new InputSource(new StringReader(xml)));
+            return "Request processed.";
+        } catch (Exception e) {
+            return "Request processed.";
         }
     }
 }

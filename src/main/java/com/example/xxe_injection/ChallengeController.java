@@ -15,13 +15,11 @@ public class ChallengeController {
     @Autowired
     private XmlParserService xmlParserService;
 
-    // Levels 1-4
+    // ... (giữ nguyên các level 1-8)
     @PostMapping("/level1") public String handleLevel1(@RequestBody String p) { return xmlParserService.parseLevel1(p); }
     @PostMapping("/level2") public String handleLevel2(@RequestBody String p) { return xmlParserService.parseLevel2(p); }
     @PostMapping("/level3") public String handleLevel3(@RequestBody String p) { return xmlParserService.parseLevel3(p); }
     @PostMapping("/level4") public String handleLevel4(@RequestBody String p) { return xmlParserService.parseLevel4(p); }
-
-    // New Levels
     @PostMapping("/level5") public String handleLevel5(@RequestBody String p) { return xmlParserService.parseLevel5(p); }
     @PostMapping("/level6") public String handleLevel6(@RequestBody String p) { return xmlParserService.parseLevel6(p); }
 
@@ -40,4 +38,7 @@ public class ChallengeController {
     }
 
     @PostMapping("/level8") public String handleLevel8(@RequestBody String p) { return xmlParserService.parseLevel8(p); }
+
+    // THÊM ENDPOINT MỚI
+    @PostMapping("/level9") public String handleLevel9(@RequestBody String p) { return xmlParserService.parseLevel9(p); }
 }
